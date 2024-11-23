@@ -1,0 +1,19 @@
+version: '3'
+services:
+  turtlebot:
+    image: turtlebot:latest
+    container_name: turtlebot-cont
+    network_mode: host
+    volumes:
+      - ~/Documents/TurtleRos/turtlebots/catkin_ws/:/root/catkin_ws/
+      - ~/logs/:/root/logs/
+      - /tmp/.X11-unix:/tmp/.X11-unix
+#    command: /bin/bash -c "mkdir -p ~/logs/ && cd ~/catkin_ws && catkin_make && roscore"
+    command: /bin/bash -c "echo 'Starting setup...' && mkdir -p ~/logs/ && cd ~/catkin_ws && tail -f /dev/null"
+    environment:
+      - ROS_MASTER_URI=http://192.168.100.104:11311
+      - ROS_IP=192.168.100.104
+      - DISPLAY=$DISPLAY
+    tty: true
+    stdin_open: true
+

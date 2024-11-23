@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TurtleApp</title>
+    <style>
+        html {
+            font-size: 16px;
+            /* Base font size for the document */
+            box-sizing: content-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        input:focus {
+            /* outline: none; */
+            outline: thick double #2C001E;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .box {
+            width: min(40vh, 40vw);
+            height: min(40vh, 40vw);
+            /* background-color: #3498db; */
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: start;
+            align-items: center;
+        }
+
+        .master-uri-ip {
+            /* position: fixed; */
+            margin-bottom: 20px;
+            width: 20rem;
+            height: 50px;
+            max-width: 800px;
+            font-size: 2rem;
+            font-family: monospace;
+            text-align: center;
+        }
+
+        .ipbot {
+            width: 80%;
+            padding: 2px;
+            height: 10%;
+            margin: 5px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .cont2 {
+            width: 95%;
+            height: 50%;
+            display: flex;
+            flex-direction: row;
+            background-image: url("{{ url_for('static', filename='images/turtlebot.jpg') }}");
+            background-size: contain;
+            background-position: center;
+            /* background-position: 100px; */
+            background-repeat: no-repeat;
+            position: relative;
+            cursor: pointer;
+            transition: 100ms all ease-in-out;
+            margin: 5px;
+        }
+
+        .cont2:active {
+            scale: 0.9;
+        }
+
+        .terminal {
+            width: 100%;
+            height: 40%;
+            /* border-radius: 5px; */
+            border: 1px solid black;
+            background-color: #2C001E;
+            font-family: monospace;
+            font-size: 9px;
+            overflow: auto;
+        }
+
+        .onoff {
+            width: 30px;
+            height: 30px;
+            border: 2px solid black;
+            border-radius: 50%;
+            background-color: red;
+            position: absolute;
+            top: 0;
+            right: 20%;
+            animation: ping 500ms step-end infinite;
+            /* animation-play-state: paused; */
+            animation-name: none;
+        }
+
+        @keyframes ping {
+            0% {
+                background-color: red;
+            }
+
+            50% {
+                background-color: #00ff00;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <input class="master-uri-ip" type="text" placeholder="ROS_MASTER_IP" name="ros-master" id="rosmasterip" value="192.168.50.250">
+    <div class="container">
+        <div class="box">
+            <input type="text" name="bot0" id="bot0" class="ipbot" value="192.168.50.103" placeholder="robot_ip">
+            <div class="cont2" onclick="anim(this, 'bot0')">
+                <div class="onoff"></div>
+            </div>
+            <div class="terminal" id="t0"></div>
+        </div>
+        <div class="box">
+            <input type="text" name="bot1" id="bot1" class="ipbot" value="192.168.50.106" placeholder="robot_ip">
+            <div class="cont2" onclick="anim(this, 'bot1')">
+                <div class="onoff"></div>
+            </div>
+            <div class="terminal" id="t1"></div>
+        </div>
+        <div class="box">
+            <input type="text" name="bot2" id="bot2" class="ipbot" value="192.168.50.107" placeholder="robot_ip">
+            <div class="cont2" onclick="anim(this, 'bot2')">
+                <div class="onoff"></div>ping
+            </div>
+            <div class="terminal" id="t2"></div>
+        </div>
+        <div class="box">
+            <input type="text" name="bot3" id="bot3" class="ipbot" value="192.168.50.109" placeholder="robot_ip">
+            <div class="cont2" onclick="anim(this, 'bot3')">
+                <div class="onoff"></div>
+            </div>
+            <div class="terminal" id="t3"></div>
+        </div>
+        <span></span>
+    </div>
+    <script>
+        let bots_a = [false, false, false, false];
+        function end_python(ip_bot, tid) {
+            return new Promise((resolve, reject) => {
+                // Make an AJAX request to the Flask server
+                fetch('/end', {
+                    method: 'POST',  // Use POST method to send data
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ip_bot: ip_bot }) // Send the variable as JSON data
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Display the result in the 'result' div
+                    let span_text = "<span style='color:#00ff00;font-weight:900;'>$ </span>"
+                    let terminal = document.getElementById(tid);
+                    terminal.innerHTML += span_text + data.result_text + "<br>";
+                    terminal.scrollTop = terminal.scrollHeight;
+
+                    if(data.active) {
+                        resolve(true);
+                    } else {
+                        reject(new Error("End failed"));
+                    }
+                });
+            });
+        }
+        function ping_python(ip_bot, ip_master, tid) {
+            return new Promise((resolve, reject) => {
+                // Make an AJAX request to the Flask server
+                fetch('/ping', {
+                    method: 'POST',  // Use POST method to send data
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ip_bot: ip_bot, ip_master: ip_master }) // Send the variable as JSON data
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Display the result in the 'result' div
+                    let span_text = "<span style='color:#00ff00;font-weight:900;'>$ </span>"
+                    let terminal = document.getElementById(tid);
+                    terminal.innerHTML += span_text + data.result_text + "<br>";
+                    terminal.scrollTop = terminal.scrollHeight;
+
+                    if(data.active) {
+                        resolve(true);
+                    } else {
+                        reject(new Error("Ping failed"));
+                    }
+                });
+            });
+        }
+        function anim(elem, name) {
+            let master = document.getElementById("rosmasterip");
+            let bot = document.getElementById(name);
+            if (master.value.length > 0 && bot.value.length > 0) {
+                elem.firstElementChild.style.animationName = "ping";
+                let id = name[name.length - 1];
+                let tid = "t" + id;
+                if(bots_a[id]) {
+                    console.log("Ending conection");
+                    end_python(bot.value, tid)
+                    .then(active => {
+                        // Remove the animation after the function is finisheactived
+                        console.log("active: ");
+                        console.log(active);
+                        elem.firstElementChild.style.animationName = "none";
+                        elem.firstElementChild.style.backgroundColor = "red";
+                        bots_a[id] = false;
+                    })
+                    .catch(error => {
+                        console.log("Error:");
+                        console.log(error);
+                        // elem.firstElementChild.style.animationName = "none";
+                        // elem.firstElementChild.style.backgroundColor = "red";
+                        // bots_a[id] = false;
+                        // Handle any errors that occur during the ping_python function
+                    });
+                } else {
+                    ping_python(bot.value, master.value, tid)
+                    .then(active => {
+                        // Remove the animation after the function is finisheactived
+                        console.log(active);
+                        elem.firstElementChild.style.animationName = "none";
+                        elem.firstElementChild.style.backgroundColor = "#00ff00";
+                        bots_a[id] = true;
+                    })
+                    .catch(error => {
+                        elem.firstElementChild.style.animationName = "none";
+                        elem.firstElementChild.style.backgroundColor = "red";
+                        bots_a[id] = false;
+                        // Handle any errors that occur during the ping_python function
+                    });
+                }
+            }
+        }
+    </script>
+</body>
+
+</html>
